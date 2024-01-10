@@ -1,26 +1,48 @@
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
+#include <queue>
 
 // Forward declarations
-class Room;
+class Game;
+class Map;
+class Character;
 class Player;
 class Monster;
+class Room;
+class PoisonRoom;
+class TrapRoom;
+
+// Enumeration for room types
+enum class RoomType {
+    Normal,
+    Poison,
+    Trap
+};
 
 // Class representing a room
-class Room
-{
+class Room {
 public:
     int row, col;
+    RoomType type;
+    Room(int row, int col, RoomType type = RoomType::Normal) : row(row), col(col), type(type) {}
 
-    Room(int row, int col) : row(row), col(col) {}
+};
 
-    // You may add more functionalities to the Room class, e.g., room type, etc.
+// Class representing a poison room (inherits from Room)
+class PoisonRoom : public Room {
+public:
+    PoisonRoom(int row, int col) : Room(row, col, RoomType::Poison) {}
+};
+
+// Class representing a trap room (inherits from Room)
+class TrapRoom : public Room {
+public:
+    TrapRoom(int row, int col) : Room(row, col, RoomType::Trap) {}
 };
 
 // Class representing a player
-class Player
-{
+class Player {
 private:
     int row, col;
 
@@ -29,15 +51,15 @@ public:
 
     // Move the player to a new room with boundary checks
     void moveToRoom(const Room& room);
+    void moveToRoom(Room& endRoom, const std::vector<std::vector<Room>>& map);
+
 
     // Getter functions for player's position
-    int getRow() const
-    {
+    int getRow() const {
         return row;
     }
 
-    int getCol() const
-    {
+    int getCol() const {
         return col;
     }
 
@@ -48,15 +70,13 @@ public:
     void runFromMonster();
 
     // Function to get the current room
-    Room getCurrentRoom() const
-    {
+    Room getCurrentRoom() const {
         return Room(row, col);
     }
 };
 
 // Class representing a monster
-class Monster
-{
+class Monster {
 private:
     int row, col;
 
@@ -67,13 +87,11 @@ public:
     void moveToRoom(const Room& room);
 
     // Getter functions for monster's position
-    int getRow() const
-    {
+    int getRow() const {
         return row;
     }
 
-    int getCol() const
-    {
+    int getCol() const {
         return col;
     }
 
@@ -82,8 +100,7 @@ public:
 };
 
 // Class representing the game
-class Game
-{
+class Game {
 private:
     Player player;
     Monster monster;
@@ -99,46 +116,37 @@ public:
 
 // Implement functions outside class declarations
 
-void Player::moveToRoom(const Room& room)
-{
+void Player::moveToRoom(const Room& room) {
     // Move only one room at a time towards the specified room
-    if (room.row == row + 1 || room.row == row - 1)
-    {
+    if (room.row == row + 1 || room.row == row - 1) {
         int newRow = row + (room.row - row) / abs(room.row - row);
-        if (newRow >= 0 && newRow < 5)
-        {
+        if (newRow >= 0 && newRow < 5) {
             row = newRow;
         }
     }
-    if (room.col == col + 1 || room.col == col - 1)
-    {
+    if (room.col == col + 1 || room.col == col - 1) {
         int newCol = col + (room.col - col) / abs(room.col - col);
-        if (newCol >= 0 && newCol < 5)
-        {
+        if (newCol >= 0 && newCol < 5) {
             col = newCol;
         }
     }
 }
 
-bool Player::senseMonster(const Monster& monster) const
-{
+bool Player::senseMonster(const Monster& monster) const {
     // For simplicity, assume a distance of 2 rooms as "nearby" for the player
-    return (std::abs(row - monster.getRow()) <= 2) && (std::abs(col - monster.getCol()) <= 2);
+    return (std::abs(row - monster.getRow()) <= 1) && (std::abs(col - monster.getCol()) <= 1);
 }
 
-void Player::runFromMonster()
-{
+void Player::runFromMonster() {
     // For simplicity, the player moves to a random adjacent room different from the current room
     int randomMove;
     Room nextRoom = getCurrentRoom();
 
-    do
-    {
+    do {
         randomMove = rand() % 4;  // 0: up, 1: down, 2: left, 3: right
         nextRoom = getCurrentRoom();
 
-        switch (randomMove)
-        {
+        switch (randomMove) {
         case 0:
             nextRoom.row--;
             break;
@@ -152,13 +160,11 @@ void Player::runFromMonster()
             nextRoom.col++;
             break;
         }
-    }
-    while (nextRoom.row == row && nextRoom.col == col);
+    } while (nextRoom.row == row && nextRoom.col == col);
 
     moveToRoom(nextRoom);
     std::cout << "Player ran away to room (" << row << ", " << col << ").\n";
 }
-
 
 void Monster::moveToRoom(const Room& room) {
     // Move only one room at a time towards the player
@@ -184,28 +190,21 @@ void Monster::moveToRoom(const Room& room) {
     }
 }
 
-
-void Monster::sensePlayer(const Player& player)
-{
+void Monster::sensePlayer(const Player& player) {
     // For simplicity, the monster always moves towards the player
-    if (player.getRow() < row)
-    {
+    if (player.getRow() < row) {
         row--;
-    }
-    else if (player.getRow() > row)
-    {
+    } else if (player.getRow() > row) {
         row++;
     }
 
-    if (player.getCol() < col)
-    {
+    if (player.getCol() < col) {
         col--;
-    }
-    else if (player.getCol() > col)
-    {
+    } else if (player.getCol() > col) {
         col++;
     }
 }
+
 void Game::movePlayerToEnd() {
     std::cout << "Moving player from start to end...\n";
 
@@ -226,6 +225,7 @@ void Game::movePlayerToEnd() {
         }
 
         player.moveToRoom(nextRoom);
+       // player.moveToRoom(Room(endRoom.row, endRoom.col));
         std::cout << "Player is now in room (" << player.getRow() << ", " << player.getCol() << ").\n";
 
         // Sense if a monster is nearby after the player has moved
@@ -250,13 +250,11 @@ void Game::movePlayerToEnd() {
     std::cout << "Player reached the end room without being attacked by the monster. Victory!\n";
 }
 
-
-int main()
-{
-// Initialize the random number generator with the current time
+int main() {
+    // Initialize the random number generator with the current time
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
     // Create a game with a 5x5 map
-    Game game(5, 5);
+    Game game(10, 10);
 
     // Move the player from the start to the end, avoiding the monster
     game.movePlayerToEnd();
