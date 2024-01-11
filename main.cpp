@@ -2,119 +2,14 @@
 #include <cstdlib>
 #include <ctime>
 #include <queue>
+#include "Room.h"
+#include "PoisonRoom.h"
+#include "classes.h"
+#include "TrapRoom.h"
+#include "Player.h"
+#include "Monster.h"
+#include "Game.h"
 
-// Forward declarations
-class Game;
-class Map;
-class Character;
-class Player;
-class Monster;
-class Room;
-class PoisonRoom;
-class TrapRoom;
-
-// Enumeration for room types
-enum class RoomType {
-    Normal,
-    Poison,
-    Trap
-};
-
-// Class representing a room
-class Room {
-public:
-    int row, col;
-    RoomType type;
-    Room(int row, int col, RoomType type = RoomType::Normal) : row(row), col(col), type(type) {}
-
-};
-
-// Class representing a poison room (inherits from Room)
-class PoisonRoom : public Room {
-public:
-    PoisonRoom(int row, int col) : Room(row, col, RoomType::Poison) {}
-};
-
-// Class representing a trap room (inherits from Room)
-class TrapRoom : public Room {
-public:
-    TrapRoom(int row, int col) : Room(row, col, RoomType::Trap) {}
-};
-
-// Class representing a player
-class Player {
-private:
-    int row, col;
-
-public:
-    Player(int startRow, int startCol) : row(startRow), col(startCol) {}
-
-    // Move the player to a new room with boundary checks
-    void moveToRoom(const Room& room);
-    void moveToRoom(Room& endRoom, const std::vector<std::vector<Room>>& map);
-
-
-    // Getter functions for player's position
-    int getRow() const {
-        return row;
-    }
-
-    int getCol() const {
-        return col;
-    }
-
-    // Function to sense if a monster is nearby
-    bool senseMonster(const Monster& monster) const;
-
-    // Function for the player to run away
-    void runFromMonster();
-
-    // Function to get the current room
-    Room getCurrentRoom() const {
-        return Room(row, col);
-    }
-};
-
-// Class representing a monster
-class Monster {
-private:
-    int row, col;
-
-public:
-    Monster(int startRow, int startCol) : row(startRow), col(startCol) {}
-
-    // Move the monster to a new room with boundary checks
-    void moveToRoom(const Room& room);
-
-    // Getter functions for monster's position
-    int getRow() const {
-        return row;
-    }
-
-    int getCol() const {
-        return col;
-    }
-
-    // Function to sense the player's position
-    void sensePlayer(const Player& player);
-};
-
-// Class representing the game
-class Game {
-private:
-    Player player;
-    Monster monster;
-    Room startRoom;
-    Room endRoom;
-
-public:
-    Game(int numRows, int numCols) : player(0, 0), monster(numRows - 1, numCols - 2), startRoom(0, 0), endRoom(numRows - 1, numCols - 1) {}
-
-    // Function to move the player from the start to the end, avoiding the monster
-    void movePlayerToEnd();
-};
-
-// Implement functions outside class declarations
 
 void Player::moveToRoom(const Room& room) {
     // Move only one room at a time towards the specified room
